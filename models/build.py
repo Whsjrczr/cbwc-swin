@@ -6,7 +6,7 @@
 # --------------------------------------------------------
 
 from .swin_transformer import SwinTransformer
-from .module import RMSNormLayer, CCLinear, Centering
+from .module import RMSNorm, CCLinear, Centering, LayerNorm
 import torch.nn as nn
 
 
@@ -16,13 +16,13 @@ def build_model(config, is_pretrain=False):
 
     # accelerate layernorm
     if config.m == 'RMS-C':
-        layernorm = RMSNormLayer
+        layernorm = RMSNorm
         centering = True
     elif config.m == 'RMS':
-        layernorm = RMSNormLayer
+        layernorm = RMSNorm
         centering = False
     else:
-        layernorm = nn.LayerNorm
+        layernorm = LayerNorm
         centering = False
     
     if config.l == 'CC':
