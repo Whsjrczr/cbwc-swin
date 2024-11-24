@@ -135,13 +135,19 @@ class RMSNormLayer(nn.Module):
 class Centering(nn.Module):
     def __init__(
         self,
-        shape: _shape_t,
         device=None,
         dtype=None,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
-        self.shape = shape
     def forward(self, x):
         mean = torch.mean(x, dim=-1, keepdim=True)
         return x - mean
+
+
+if __name__ == '__main__':
+    x = torch.rand((2,3,4))
+    cc = Centering()
+    y = cc(x)
+    print(x.shape)
+    print(y.shape)

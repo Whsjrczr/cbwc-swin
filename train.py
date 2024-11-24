@@ -22,7 +22,7 @@ from models.build import build_model
 
 def main():
 
-    args, config = get_args()
+    args = get_args()
 
     datapath = args.data_path
     dataset = datapath.split('/')[-1]
@@ -31,6 +31,7 @@ def main():
     model_name = model_name + '_e' + str(args.epochs) + '_ps' + str(args.patch_size) 
     model_name = model_name + '_bs' + str(args.batch_size) + '_lr' + str(args.lr) + '_wd' + str(args.weight_decay) 
     model_name = model_name + '_wre' + str(args.warmup_epochs) + '_wk' + str(args.workers) + '_nc' + str(args.num_classes) + '_s' + str(args.seed)
+    print(model_name)
 
     random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -40,33 +41,15 @@ def main():
 
     # Data loading code
     datadir = args.data_path
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-    train_transform = transforms.Compose([
-            transforms.RandomResizedCrop(224),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            normalize,
-    ]) 
-    test_transform = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            normalize,
-        ])
-
-    train_dataset, test_dataset = make_dataset(root_dir=datadir, train_transform=train_transform, test_transform=test_transform, splite_rate=0.2)
-
+    train_dataset, test_dataset = make_dataset(root_dir=datadir, splite_rate=0.2)
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.workers, pin_memory=True, shuffle=True)
-
     val_loader = torch.utils.data.DataLoader(test_dataset, batch_size=256, num_workers=args.workers, pin_memory=True, shuffle=False)
 
     print("Building data done with {} images loaded.".format(len(train_dataset)))
-
     # build model
-    print("creating model '{}'".format(args.arch))
-
+    print(args)
+    print("creating model '{}'".format(str(args.arch) + '_' + args.m + '_' + args.l))
     model = build_model(args)
 
     # if args.m == 'ori':
