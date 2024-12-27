@@ -204,16 +204,12 @@ class SwinTransformerBlock(nn.Module):
         self.window_size = window_size
         self.shift_size = shift_size
         self.mlp_ratio = mlp_ratio
-        # print('shift_size = ' + str(self.shift_size))
-        # print('window_size = ' + str(self.window_size))
-        # print(self.input_resolution)
+
         if min(self.input_resolution) <= self.window_size:
             # if window size is larger than input resolution, we don't partition windows
             self.shift_size = 0
             self.window_size = min(self.input_resolution)
-        # print('shift_size = ' + str(self.shift_size))
-        # print('window_size = ' + str(self.window_size))
-        # print('---------------')
+
         assert 0 <= self.shift_size < self.window_size, "shift_size must in 0-window_size"
 
         self.norm1 = norm_layer(dim)
@@ -482,8 +478,8 @@ class PatchEmbed(nn.Module):
         assert H == self.img_size[0] and W == self.img_size[1], \
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
         x = self.proj(x).flatten(2).transpose(1, 2)  # B Ph*Pw C
-        # if self.centering is not None:
-            # x = self.centering(x)
+        if self.centering is not None:
+            x = self.centering(x)
         if self.norm is not None:
             x = self.norm(x)
         return x
@@ -532,38 +528,21 @@ class SwinTransformer(nn.Module):
         super().__init__()
 
         self.num_classes = num_classes
-        # print("num_class")
         print(num_classes)
         self.num_layers = len(depths)
-        # print("num_layer")
-        # print(self.num_layers)
         self.embed_dim = embed_dim
         self.ape = ape
         self.patch_norm = patch_norm
         self.num_features = int(embed_dim * 2 ** (self.num_layers - 1))
         self.mlp_ratio = mlp_ratio
-        # print("img_size")
-        # print(img_size)
-        # print("patch_size")
-        # print(patch_size)
-        # print("in_chans")
-        # print(in_chans)
-        # print("embed_dim")
-        # print(embed_dim)
 
 
         # split image into non-overlapping patches
         self.patch_embed = PatchEmbed(
             img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim,
             norm_layer=norm_layer if self.patch_norm else None, centering=centering)
-        # print(self.patch_embed)
         num_patches = self.patch_embed.num_patches
         patches_resolution = self.patch_embed.patches_resolution
-        # print("num_patches")
-        # print(num_patches)
-        # print("patches_resolution")
-        # print(patches_resolution)
-        # print("=====")
         
         self.patches_resolution = patches_resolution
 
@@ -580,11 +559,6 @@ class SwinTransformer(nn.Module):
         # build layers
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
-            # print(patches_resolution[0] // (2 ** i_layer),
-            #                                      patches_resolution[1] // (2 ** i_layer))
-            # print(i_layer)
-            # print(patches_resolution)
-            # print('----------')
             layer = BasicLayer(dim=int(embed_dim * 2 ** i_layer),
                                input_resolution=(patches_resolution[0] // (2 ** i_layer),
                                                  patches_resolution[1] // (2 ** i_layer)),

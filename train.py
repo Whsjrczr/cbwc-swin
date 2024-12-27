@@ -52,13 +52,6 @@ def main():
     print("creating model '{}'".format(str(args.arch) + '_' + args.m + '_' + args.l))
     model = build_model(args)
 
-    # if args.m == 'ori':
-    #     model = vits.__dict__[args.arch](num_classes=args.num_classes)
-    # elif args.m == 'cbwc':
-    #     model = vits_cbwc.__dict__[args.arch](num_classes=args.num_classes)
-    # elif args.m == 'rms':
-    #     model = vits_rms.__dict__[args.arch](num_classes=args.num_classes)
-
 
     args.lr = args.lr * args.batch_size  / 256
 
@@ -72,30 +65,32 @@ def main():
     model.cuda()
     print(model)
     print("Building model done.")
+    
+    if args.wandb:
+        wandb.init(
+            project="CBWC",
+            name=model_name,
+            notes=str(args),
+            config={
+                "architecture": args.arch,
+                "method": args.m + '+' + args.l,
+                "dataset": "imagenet100",
+                
+                "epochs": args.epochs,
+                "batch_size": args.batch_size,
+                "patch_size": args.patch_size,
 
-    wandb.init(
-        project="CBWC-exp",
-        name=model_name,
-        notes=str(args),
-        config={
-            "model": args.arch,
-            "method": args.m + args.l,
-            
-            "epochs": args.epochs,
-            "batch_size": args.batch_size,
-            "patch_size": args.patch_size,
+                "learning_rate": args.lr,
+                "weight_decay": args.weight_decay,
+                "warmup_epochs": args.warmup_epochs,
 
-            "learning_rate": args.lr,
-            "weight_decay": args.weight_decay,
-            "warmup_epochs": args.warmup_epochs,
-
-            "workers": args.workers,
-            "method": str('origin'),
+                "workers": args.workers,
+                "method": str('origin'),
 
 
-            "seed": args.seed,
-        }
-    )
+                "seed": args.seed,
+            }
+        )
 
     criterion = nn.CrossEntropyLoss().cuda()
 
@@ -120,7 +115,8 @@ def main():
         # train the network
         train(train_loader, model, criterion, optimizer, epoch, args)
         scheduler.step()
-        wandb.log({"learning_rate": scheduler.get_last_lr()[0]})
+        if args.wandb:
+            wandb.log({"learning_rate": scheduler.get_last_lr()[0]})
 
         # save checkpoints
         save_dict = {
@@ -137,7 +133,8 @@ def main():
         
         acc1, acc5 = validate(val_loader, model, criterion, args)
 
-    wandb.finish()
+    if args.wandb:
+        wandb.finish()
 
   
 
@@ -190,7 +187,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         bp_end = time.time()
         bp_time_batch = (bp_end - bp_begin) * 1e6
         bp_time.update(bp_time_batch)
-        wandb.log({"fp_time":fp_time_batch, "bp_time":bp_time_batch})
+        if args.wandb:
+            wandb.log({"fp_time":fp_time_batch, "bp_time":bp_time_batch})
 
         optimizer.step()
 
@@ -203,8 +201,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         torch.cuda.synchronize()
         end = time.time()
 
-
-    wandb.log({"train_loss":losses.avg, "train_acc_top1": top1.avg, "train_acc_top5": top5.avg, "train_epoch":epoch, "train_fp_avg_time": fp_time.avg, "train_bp_avg_time": bp_time.avg})
+    if args.wandb:
+        wandb.log({"train_loss":losses.avg, "train_acc_top1": top1.avg, "train_acc_top5": top5.avg, "train_epoch":epoch, "train_fp_avg_time": fp_time.avg, "train_bp_avg_time": bp_time.avg})
 
 def validate(val_loader, model, criterion, args):
     batch_time = AverageMeter('Time', ':6.3f')
@@ -236,7 +234,8 @@ def validate(val_loader, model, criterion, args):
             val_end = time.time()
             val_time_batch = (val_end - val_begin)*1e6
             val_time.update(val_time_batch)
-            wandb.log({"val_time":val_time_batch})
+            if args.wandb:
+                wandb.log({"val_time":val_time_batch})
 
             loss = criterion(output, target)
 
@@ -255,7 +254,8 @@ def validate(val_loader, model, criterion, args):
 
         print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
               .format(top1=top1, top5=top5))
-    wandb.log({"test_loss":losses.avg, "test_acc_top1": top1.avg, "test_acc_top5": top5.avg, "val_avg_time": val_time.avg})
+    if args.wandb:
+        wandb.log({"test_loss":losses.avg, "test_acc_top1": top1.avg, "test_acc_top5": top5.avg, "val_avg_time": val_time.avg})
     return top1.avg, top5.avg   
 
 class AverageMeter(object):

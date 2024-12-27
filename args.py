@@ -42,5 +42,7 @@ def get_args():
                     help='number of classes')
     
     parser.add_argument('--seed', default=-1, type=int, help='manual seed')
+
+    parser.add_argument('--wandb', default=False, type=bool, help='wandb log')
     args, unparsed = parser.parse_known_args()
     return args
