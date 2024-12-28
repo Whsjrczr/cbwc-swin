@@ -46,7 +46,8 @@ def main():
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.workers, pin_memory=True, shuffle=True)
     val_loader = torch.utils.data.DataLoader(test_dataset, batch_size=256, num_workers=args.workers, pin_memory=True, shuffle=False)
 
-    print("Building data done with {} images loaded.".format(len(train_dataset)))
+    print("Building training data done with {} images loaded.".format(len(train_dataset)))
+    print("Building test data done with {} images loaded.".format(len(test_dataset)))
     # build model
     print(args)
     print("creating model '{}'".format(str(args.arch) + '_' + args.m + '_' + args.l))
@@ -65,7 +66,6 @@ def main():
     model.cuda()
     print(model)
     print("Building model done.")
-    
     if args.wandb:
         wandb.init(
             project="CBWC",
